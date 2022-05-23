@@ -1,5 +1,5 @@
-const { User } = require('../models');
 const { AuthenticationError } = require('apollo-server-express');
+const { User } = require('../models');
 const { signToken } = require('../utils/auth');
 
 const resolvers = {
@@ -15,20 +15,7 @@ const resolvers = {
             }
 
             throw new AuthenticationError('Not logged in');
-        },
-        // get all users
-        users: async () => {
-            return User.find()
-                .select('-__v -password')
-                .populate('savedBooks');
-        },
-        // get a user by username
-        user: async (parent, { username }) => {
-            return User.findOne({ username })
-                .select('-__v -password')
-                .populate('savedBooks');
         }
-
     },
     Mutation: {
         addUser: async (parent, args) => {
@@ -52,19 +39,14 @@ const resolvers = {
             const token = signToken(user);
             return { token, user };
         },
-        saveBook: async (parent, { user, body }, context) => {
+        saveBook: async (parent, { book }, context) => {
             if (context.user) {
                 const updatedUser = await User.findOneAndUpdate(
-                    { _id: user._id },
-                    { $addToSet: { savedBooks: body } },
-                    { new: true, runValidators: true }
-                );
-
-                await User.findByIdAndUpdate(
                     { _id: context.user._id },
-                    { $push: { thoughts: thought._id } },
+                    { $addToSet: { savedBooks: book } },
                     { new: true }
                 );
+
 
                 return updatedUser;
             }
